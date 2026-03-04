@@ -56,7 +56,7 @@ export default function TopControlBar({
 							/>
 						</div>
 					</Dropdown.Trigger>
-					<Dropdown.Popover placement="bottom">
+					<Dropdown.Popover placement="bottom" className="no-scrollbar">
 						<Dropdown.Menu
 							selectionMode="single"
 							selectedKeys={new Set([selectedQuestion])}

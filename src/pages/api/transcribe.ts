@@ -31,7 +31,7 @@ const groqTranscriptionSchema = z.object({
 				.object({
 					no_speech_prob: z.number().optional(),
 				})
-				.passthrough(),
+				.loose(),
 		)
 		.optional(),
 });

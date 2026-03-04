@@ -12,6 +12,14 @@
 		line-height: 1.5;
 	}
 
+	.no-scrollbar {
+		scrollbar-width: none;
+	}
+
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
 	.overlay-scrollbar {
 		scrollbar-width: thin;
 		scrollbar-color: rgba(66, 103, 145, 0.35) transparent;
