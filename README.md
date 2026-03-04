@@ -1,46 +1,88 @@
-# Astro Starter Kit: Basics
+# NCKU NIHSS Frontend
 
-```sh
-bun create astro@latest -- --template basics
+## Prerequisites
+
+- Bun (for local development/build)
+- Docker + Docker Compose (for container deployment)
+
+## Environment Variables
+
+First, obtain a GROQ API key from [GROQ Console](https://console.groq.com/keys). Then,
+Create `.env` in the project root:
+
+```env
+GROQ_API_KEY=
+GROQ_TRANSCRIBE_MODEL=whisper-large-v3-turbo
+EVALUATE_API_URL=http://xx.xx.xx.xx/evaluate
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+You can copy from `.env.sample`.
 
-## 🚀 Project Structure
+## Docker Deployment
 
-Inside of your Astro project, you'll see the following folders and files:
+This repository includes:
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+- `deploy/Dockerfile`
+- `deploy/docker-compose.yml`
+
+Build and run:
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+Check logs:
 
-## 🧞 Commands
+```bash
+docker compose -f deploy/docker-compose.yml logs -f
+```
 
-All commands are run from the root of the project, from a terminal:
+Stop:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
+```bash
+docker compose -f deploy/docker-compose.yml down
+```
 
-## 👀 Want to learn more?
+The app is exposed at `http://localhost:4321`.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Development
+
+### Getting Started
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Start dev server:
+
+```bash
+bun run dev
+```
+
+Build production output:
+
+```bash
+bun run build
+```
+
+Preview production build locally:
+
+```bash
+bun run preview
+```
+
+### Lint and Format
+
+Run lint (auto-fix enabled by script):
+
+```bash
+bun run lint
+```
+
+Run formatter:
+
+```bash
+bun run format
+```
