@@ -1,0 +1,34 @@
+{
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "off"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"**/*.svelte",
+				"**/*.astro",
+				"**/*.vue",
+				"**/*.tsx",
+				"**/*.ts",
+				"**/*.jsx",
+				"**/*.js"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"useConst": "off",
+						"useImportType": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off",
+						"noUnusedImports": "off"
+					}
+				}
+			}
+		}
+	]
+}

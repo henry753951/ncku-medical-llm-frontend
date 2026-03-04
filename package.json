@@ -1,14 +1,35 @@
 {
-  "name": "ncku-medical-llm-frontend",
-  "type": "module",
-  "version": "0.0.1",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
-  },
-  "dependencies": {
-    "astro": "^5.17.1"
-  }
+	"name": "ncku-medical-llm-frontend",
+	"type": "module",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro",
+		"lint": "biome lint ./src ./public --fix",
+		"format": "biome format ./src ./public --write"
+	},
+	"dependencies": {
+		"@astrojs/node": "^9.5.4",
+		"@astrojs/react": "^4.4.2",
+		"@astrojs/vue": "^5.1.4",
+		"@heroui/react": "^3.0.0-beta.8",
+		"@heroui/styles": "^3.0.0-beta.8",
+		"@tailwindcss/vite": "^4.2.1",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"astro": "^5.17.1",
+		"lucide-react": "^0.576.0",
+		"motion": "^12.34.5",
+		"opencc-js": "^1.0.5",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"tailwindcss": "^4.2.1",
+		"vue": "^3.5.29",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.5"
+	}
 }

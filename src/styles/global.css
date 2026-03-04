@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@layer base {
+	* {
+		box-sizing: border-box;
+	}
+
+	body {
+		margin: 0;
+		font-family: "Space Grotesk", "Noto Sans TC", sans-serif;
+		line-height: 1.5;
+	}
+
+	.overlay-scrollbar {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(66, 103, 145, 0.35) transparent;
+	}
+
+	.overlay-scrollbar::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	.overlay-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.overlay-scrollbar::-webkit-scrollbar-thumb {
+		border-radius: 999px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+		background-color: rgba(66, 103, 145, 0.35);
+	}
+
+	.overlay-scrollbar::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(66, 103, 145, 0.52);
+	}
+}
