@@ -2,10 +2,14 @@ import { useCallback, useState } from "react";
 import type { QuestionCode } from "../lib/questions";
 import type { EvaluateState } from "../lib/types";
 
-type SubmitInput = {
+type ApiRequestInput = {
 	question: QuestionCode;
 	text: string;
 	timeoutMs: number;
+};
+
+type ApiResponse = {
+	result: boolean;
 };
 
 type ApiError = {
@@ -60,7 +64,7 @@ export const useEvaluateFlow = () => {
 		useState<AbortController | null>(null);
 
 	const submit = useCallback(
-		async ({ question, text, timeoutMs }: SubmitInput) => {
+		async ({ question, text, timeoutMs }: ApiRequestInput) => {
 			if (isSubmitting) {
 				throw new Error("目前已有判斷請求進行中。");
 			}
@@ -96,9 +100,7 @@ export const useEvaluateFlow = () => {
 					throw new Error(message);
 				}
 
-				const evaluateJson = (await evaluateResponse.json()) as {
-					result?: boolean;
-				};
+				const evaluateJson = (await evaluateResponse.json()) as ApiResponse;
 				const result = Boolean(evaluateJson.result);
 				setLastResult(result);
 				setState(result ? "match" : "mismatch");
