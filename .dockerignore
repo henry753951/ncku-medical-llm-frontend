@@ -1,0 +1,7 @@
+.git
+.vscode
+.astro
+dist
+node_modules
+README.md
+*.log

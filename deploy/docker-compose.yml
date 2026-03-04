@@ -1,0 +1,15 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: ncku-medical-llm-frontend:latest
+    container_name: ncku-medical-llm-frontend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+    ports:
+      - "4321:4321"

@@ -1,11 +1,4 @@
-import {
-	AlertDialog,
-	Button,
-	Chip,
-	Dropdown,
-	Label,
-	ScrollShadow,
-} from "@heroui/react";
+import { Button, Chip, Dropdown, Label, ScrollShadow } from "@heroui/react";
 import type { QuestionCode } from "../../lib/questions";
 import {
 	AlertTriangle,
