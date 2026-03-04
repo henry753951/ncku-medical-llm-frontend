@@ -23,7 +23,17 @@ export default function TopControlBar({
 		QUESTION_OPTIONS[0];
 
 	return (
-		<div className="absolute left-1/2 top-1 z-20 flex w-[min(96vw,760px)] -translate-x-1/2 items-center gap-3 rounded-full border border-white/70 bg-white/55 p-2 shadow-[0_18px_70px_rgba(11,38,70,0.12)] backdrop-blur-xl">
+		<div
+			className="
+				absolute left-1/2 top-1 z-20
+				flex w-[min(96vw,760px)] -translate-x-1/2
+				items-center gap-3
+				rounded-full border border-white/70
+				bg-white/55 p-3
+				shadow-[0_18px_70px_rgba(11,38,70,0.12)]
+				backdrop-blur-xl
+			"
+		>
 			{historyControl}
 			<div className="relative flex min-w-0 flex-1 items-center">
 				<Dropdown>

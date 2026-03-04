@@ -159,6 +159,16 @@ export default function IntelligenceWaveBackground({
 	);
 	const highlight = buildHighlight(width, base - 6, amp * 0.24, phase + 0.08);
 
+	const [isMounted, setIsMounted] = useState(false);
+
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	if (!isMounted) {
+		return <div className="absolute inset-0 bg-transparent" />;
+	}
+
 	return (
 		<div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
 			<motion.svg

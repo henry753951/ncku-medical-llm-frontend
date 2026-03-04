@@ -1,19 +1,23 @@
 import { useCallback, useState } from "react";
-import type { QuestionCode } from "../lib/questions";
-import type { EvaluateState, TranscribeState } from "../lib/types";
+import type { TranscribeState } from "../lib/types";
 
 type SubmitInput = {
 	blob: Blob;
 	mimeType: string;
-	question: QuestionCode;
 	durationMs: number;
 	maxRms: number;
 	maxPeak: number;
+	timeoutMs: number;
 };
 
 type ApiError = {
 	error?: string;
 	code?: string;
+};
+
+type TimeoutFetchOptions = RequestInit & {
+	timeoutMs: number;
+	signal?: AbortSignal;
 };
 
 const extractErrorMessage = async (response: Response, fallback: string) => {
@@ -22,6 +26,31 @@ const extractErrorMessage = async (response: Response, fallback: string) => {
 		return payload.error ?? fallback;
 	} catch {
 		return fallback;
+	}
+};
+
+const fetchWithTimeout = async (url: string, options: TimeoutFetchOptions) => {
+	const { timeoutMs, signal, ...requestInit } = options;
+	const timeoutController = new AbortController();
+	const relayAbort = () => timeoutController.abort();
+	if (signal) {
+		if (signal.aborted) {
+			timeoutController.abort();
+		} else {
+			signal.addEventListener("abort", relayAbort, { once: true });
+		}
+	}
+	const timer = window.setTimeout(() => timeoutController.abort(), timeoutMs);
+	try {
+		return await fetch(url, {
+			...requestInit,
+			signal: timeoutController.signal,
+		});
+	} finally {
+		window.clearTimeout(timer);
+		if (signal) {
+			signal.removeEventListener("abort", relayAbort);
+		}
 	}
 };
 
@@ -53,160 +82,146 @@ const analyzeAudioBlob = async (blob: Blob) => {
 export const useTranscriptionFlow = () => {
 	const [transcribeState, setTranscribeState] =
 		useState<TranscribeState>("idle");
-	const [evaluateState, setEvaluateState] = useState<EvaluateState>("idle");
 	const [transcript, setTranscript] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const [lastResult, setLastResult] = useState<boolean | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [activeController, setActiveController] =
+		useState<AbortController | null>(null);
 
 	const submit = useCallback(
 		async ({
 			blob,
 			mimeType,
-			question,
 			durationMs,
 			maxRms,
 			maxPeak,
+			timeoutMs,
 		}: SubmitInput) => {
+			if (isSubmitting) {
+				throw new Error("目前已有請求進行中。");
+			}
 			setError(null);
-			setLastResult(null);
-			setEvaluateState("idle");
+			setIsSubmitting(true);
 
-			if (durationMs < 450) {
-				setTranscribeState("error");
-				setEvaluateState("error");
-				const message = "錄音太短，請至少說 0.5 秒以上。";
-				setError(message);
-				throw new Error(message);
-			}
-
-			const frontendTooQuiet = maxRms < 0.012 && maxPeak < 0.08;
-			if (frontendTooQuiet) {
-				setTranscribeState("error");
-				setEvaluateState("error");
-				const message = "音量太小，未達辨識門檻，請靠近麥克風再試一次。";
-				setError(message);
-				throw new Error(message);
-			}
-
+			const controller = new AbortController();
+			setActiveController(controller);
 			try {
-				const analyzed = await analyzeAudioBlob(blob);
-				const likelySilent =
-					analyzed.durationSec < 0.45 ||
-					(analyzed.rms < 0.006 && analyzed.peak < 0.03);
-				if (likelySilent) {
+				if (durationMs < 450) {
 					setTranscribeState("error");
-					setEvaluateState("error");
-					const message = "未偵測到清晰語音，請再說一次。";
+					const message = "錄音太短，請至少說 0.5 秒以上。";
 					setError(message);
 					throw new Error(message);
 				}
-			} catch (analysisError) {
-				if (
-					analysisError instanceof Error &&
-					analysisError.message.includes("未偵測")
-				) {
-					throw analysisError;
+
+				const frontendTooQuiet = maxRms < 0.012 && maxPeak < 0.08;
+				if (frontendTooQuiet) {
+					setTranscribeState("error");
+					const message = "音量太小，未達辨識門檻，請靠近麥克風再試一次。";
+					setError(message);
+					throw new Error(message);
 				}
-				// Ignore decode failures for unsupported mime on some browsers and fallback to server-side checks.
-			}
 
-			setTranscribeState("transcribing");
+				try {
+					const analyzed = await analyzeAudioBlob(blob);
+					const likelySilent =
+						analyzed.durationSec < 0.45 ||
+						(analyzed.rms < 0.006 && analyzed.peak < 0.03);
+					if (likelySilent) {
+						setTranscribeState("error");
+						const message = "未偵測到清晰語音，請再說一次。";
+						setError(message);
+						throw new Error(message);
+					}
+				} catch (analysisError) {
+					if (
+						analysisError instanceof Error &&
+						analysisError.message.includes("未偵測")
+					) {
+						throw analysisError;
+					}
+					// Ignore decode failures for unsupported mime on some browsers and fallback to server-side checks.
+				}
 
-			const formData = new FormData();
-			formData.append("audio", blob, "speech.webm");
-			formData.append("mimeType", mimeType);
-			formData.append("language", "zh");
+				setTranscribeState("transcribing");
 
-			const transcribeResponse = await fetch("/api/transcribe", {
-				method: "POST",
-				body: formData,
-			});
+				const formData = new FormData();
+				formData.append("audio", blob, "speech.webm");
+				formData.append("mimeType", mimeType);
+				formData.append("language", "zh");
 
-			if (!transcribeResponse.ok) {
-				setTranscribeState("error");
-				setEvaluateState("error");
-				const message = await extractErrorMessage(
-					transcribeResponse,
-					"語音辨識失敗，請再試一次。",
-				);
-				setError(message);
-				throw new Error(message);
-			}
+				const transcribeResponse = await fetchWithTimeout("/api/transcribe", {
+					method: "POST",
+					body: formData,
+					timeoutMs,
+					signal: controller.signal,
+				});
 
-			const transcribeJson = (await transcribeResponse.json()) as {
-				text?: string;
-			};
-			const text = transcribeJson.text?.trim() ?? "";
-			if (!text) {
-				setTranscribeState("error");
-				setEvaluateState("error");
-				const message = "辨識結果為空白，請重新錄音。";
-				setError(message);
-				throw new Error(message);
-			}
+				if (!transcribeResponse.ok) {
+					setTranscribeState("error");
+					const message = await extractErrorMessage(
+						transcribeResponse,
+						"語音辨識失敗，請再試一次。",
+					);
+					setError(message);
+					throw new Error(message);
+				}
 
-			setTranscript(text);
-			setTranscribeState("done");
-			setEvaluateState("checking");
+				const transcribeJson = (await transcribeResponse.json()) as {
+					text?: string;
+				};
+				const text = transcribeJson.text?.trim() ?? "";
+				if (!text) {
+					setTranscribeState("error");
+					const message = "辨識結果為空白，請重新錄音。";
+					setError(message);
+					throw new Error(message);
+				}
 
-			const evaluateResponse = await fetch("/api/evaluate", {
-				method: "POST",
-				headers: {
-					"content-type": "application/json; charset=utf-8",
-				},
-				body: JSON.stringify({
-					question,
+				setTranscript(text);
+				setTranscribeState("done");
+				return {
 					text,
-				}),
-			});
-
-			if (!evaluateResponse.ok) {
-				setEvaluateState("error");
-				const message = await extractErrorMessage(
-					evaluateResponse,
-					"題目判斷服務暫時無法使用。",
-				);
-				setError(message);
-				throw new Error(message);
+				};
+			} catch (submitError) {
+				if (submitError instanceof Error && submitError.name === "AbortError") {
+					setTranscribeState("error");
+					const message = "已中止送出或等待逾時，請再試一次。";
+					setError(message);
+					throw new Error(message);
+				}
+				throw submitError;
+			} finally {
+				setIsSubmitting(false);
+				setActiveController(null);
 			}
-
-			const evaluateJson = (await evaluateResponse.json()) as {
-				result?: boolean;
-			};
-			const result = Boolean(evaluateJson.result);
-			setLastResult(result);
-			setEvaluateState(result ? "match" : "mismatch");
-			return {
-				text,
-				result,
-			};
 		},
-		[],
+		[isSubmitting],
 	);
+
+	const abort = useCallback(() => {
+		activeController?.abort();
+	}, [activeController]);
 
 	const markRecording = useCallback(() => {
 		setError(null);
 		setTranscript("");
-		setLastResult(null);
 		setTranscribeState("recording");
-		setEvaluateState("idle");
 	}, []);
 
 	const reset = useCallback(() => {
+		activeController?.abort();
 		setError(null);
-		setLastResult(null);
 		setTranscript("");
 		setTranscribeState("idle");
-		setEvaluateState("idle");
-	}, []);
+	}, [activeController]);
 
 	return {
 		transcribeState,
-		evaluateState,
 		transcript,
 		error,
-		lastResult,
+		isSubmitting,
 		submit,
+		abort,
 		markRecording,
 		reset,
 	};

@@ -40,9 +40,19 @@ export const useMicPreview = ({
 
 		const startPreview = async () => {
 			try {
+				const baseAudioConstraints: MediaTrackConstraints = {
+					echoCancellation: false,
+					noiseSuppression: false,
+					autoGainControl: false,
+				};
 				const constraints: MediaStreamConstraints = selectedDeviceId
-					? { audio: { deviceId: { exact: selectedDeviceId } } }
-					: { audio: true };
+					? {
+							audio: {
+								...baseAudioConstraints,
+								deviceId: { exact: selectedDeviceId },
+							},
+						}
+					: { audio: baseAudioConstraints };
 				stream = await navigator.mediaDevices.getUserMedia(constraints);
 				if (closed) {
 					return;
@@ -57,33 +67,36 @@ export const useMicPreview = ({
 				source.connect(gainNode);
 				gainNode.connect(analyser);
 
-				const waveform = new Uint8Array(analyser.fftSize);
+				const waveform = new Float32Array(analyser.fftSize);
 				const loop = () => {
 					if (!analyser) {
 						return;
 					}
-					analyser.getByteTimeDomainData(waveform);
+					analyser.getFloatTimeDomainData(waveform);
 					let rms = 0;
 					let peak = 0;
 					for (const sample of waveform) {
-						const normalized = ((sample - 128) / 128) * micGain;
-						rms += normalized * normalized;
-						peak = Math.max(peak, Math.abs(normalized));
+						// GainNode already applies micGain; avoid double amplification here.
+						rms += sample * sample;
+						peak = Math.max(peak, Math.abs(sample));
 					}
 					rms = Math.sqrt(rms / waveform.length);
 
-					const db = 20 * Math.log10(rms + 1e-6);
-					const dbNormalized = Math.min(1, Math.max(0, (db + 54) / 54));
+					// Noise gate to avoid random floor movement on near-silent devices.
+					const gatedRms = Math.max(0, rms - 0.0045);
+					const gatedPeak = Math.max(0, peak - 0.02);
+					const db = 20 * Math.log10(gatedRms + 1e-6);
+					const dbNormalized = Math.min(1, Math.max(0, (db + 62) / 62));
 					const level = Math.min(
 						1,
-						dbNormalized * 0.78 + Math.min(1, peak) * 0.22,
+						dbNormalized * 0.75 + Math.min(1, gatedPeak) * 0.25,
 					);
-					const limitedPeak = Math.min(1, peak);
+					const limitedPeak = Math.min(1, gatedPeak);
 					// Fast attack, slow release feels responsive without jitter.
 					const levelAttack = 0.62;
-					const levelRelease = 0.22;
+					const levelRelease = 0.16;
 					const peakAttack = 0.72;
-					const peakRelease = 0.18;
+					const peakRelease = 0.15;
 					smoothLevel =
 						level > smoothLevel
 							? smoothLevel + (level - smoothLevel) * levelAttack
@@ -97,6 +110,13 @@ export const useMicPreview = ({
 						clipHoldFrames = 12;
 					} else {
 						clipHoldFrames = Math.max(0, clipHoldFrames - 1);
+					}
+
+					if (gatedRms === 0 && gatedPeak === 0) {
+						smoothLevel *= 0.9;
+						smoothPeak *= 0.9;
+						if (smoothLevel < 0.004) smoothLevel = 0;
+						if (smoothPeak < 0.004) smoothPeak = 0;
 					}
 
 					setPreviewLevel(smoothLevel);

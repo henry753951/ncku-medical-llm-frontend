@@ -165,7 +165,7 @@ export default function PushToTalkButton({
 
 	const label = useMemo(() => {
 		if (locked) return isRecording ? "點一下停止" : "點一下開始";
-		return isRecording ? "放開結束" : "按住說話";
+		return isRecording ? "放開結束" : "按住說話 / 輕點一下鎖定";
 	}, [locked, isRecording]);
 
 	const showWave = (locked && isRecording) || isRecording;
