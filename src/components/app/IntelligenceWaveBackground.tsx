@@ -122,7 +122,9 @@ export default function IntelligenceWaveBackground({
 
 			setPhase((prev) => {
 				const speed = 0.12 + liveEnergyRef.current * 0.95;
-				return (prev + dt * speed) % 1;
+				// Use a larger wrap period so all phase multipliers (e.g. 1.24/1.1/0.92)
+				// land on equivalent wave states at wrap boundaries.
+				return (prev + dt * speed) % 100;
 			});
 
 			raf = requestAnimationFrame(tick);
@@ -135,6 +137,11 @@ export default function IntelligenceWaveBackground({
 	}, []);
 
 	const amp = 56 + liveEnergy * height * 0.42;
+	const phaseAngle = (phase / 100) * Math.PI * 2;
+	const hueShiftA = Math.sin(phaseAngle) * 9;
+	const hueShiftB = Math.cos(phaseAngle) * 10;
+	const gradientShift = Math.sin(phaseAngle) * 90;
+	const gradientShift2 = Math.cos(phaseAngle) * 70;
 	const pathA = buildWave(width, height, base, amp, phase);
 	const pathB = buildWave(
 		width,
@@ -161,15 +168,46 @@ export default function IntelligenceWaveBackground({
 				style={{ overflow: "visible" }}
 			>
 				<defs>
-					<linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stopColor="#6a9dff" />
-						<stop offset="50%" stopColor="#5ed8cb" />
-						<stop offset="100%" stopColor="#8f7cff" />
+					<linearGradient
+						id="g1"
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="0%"
+						gradientUnits="userSpaceOnUse"
+						gradientTransform={`translate(${gradientShift} 0)`}
+					>
+						<stop offset="0%" stopColor={`hsl(${218 + hueShiftA} 92% 70%)`} />
+						<stop
+							offset="50%"
+							stopColor={`hsl(${184 + hueShiftB * 0.5} 72% 66%)`}
+						/>
+						<stop
+							offset="100%"
+							stopColor={`hsl(${248 - hueShiftA * 0.7} 82% 72%)`}
+						/>
 					</linearGradient>
-					<linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stopColor="#60a5fa" />
-						<stop offset="50%" stopColor="#5ed8cb" />
-						<stop offset="100%" stopColor="#34d399" />
+					<linearGradient
+						id="g2"
+						x1="0%"
+						y1="0%"
+						x2="100%"
+						y2="0%"
+						gradientUnits="userSpaceOnUse"
+						gradientTransform={`translate(${gradientShift2} 0)`}
+					>
+						<stop
+							offset="0%"
+							stopColor={`hsl(${208 + hueShiftB * 0.6} 90% 68%)`}
+						/>
+						<stop
+							offset="50%"
+							stopColor={`hsl(${178 + hueShiftA * 0.55} 70% 64%)`}
+						/>
+						<stop
+							offset="100%"
+							stopColor={`hsl(${154 - hueShiftB * 0.5} 65% 58%)`}
+						/>
 					</linearGradient>
 					<linearGradient id="highlight">
 						<stop offset="0%" stopColor="rgba(255,255,255,0.14)" />
