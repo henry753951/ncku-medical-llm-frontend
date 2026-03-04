@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import TypewriterText from "./TypewriterText";
 
 type CenterFeedbackProps = {
 	suggestions: readonly string[];
@@ -30,7 +31,7 @@ export default function CenterFeedback({
 		}
 		const timer = window.setInterval(() => {
 			setSuggestionIndex((current) => (current + 1) % suggestions.length);
-		}, 3200);
+		}, 5200);
 		return () => window.clearInterval(timer);
 	}, [showSuggestionCarousel, suggestions]);
 
@@ -43,22 +44,25 @@ export default function CenterFeedback({
 			return {
 				key: `transcript:${transcript}`,
 				text: transcript,
+				typewriter: false,
 				className:
 					"text-[clamp(1.2rem,2.35vw,1.95rem)] font-medium text-slate-900 whitespace-pre-wrap [text-wrap:pretty]",
 			};
 		}
 		if (showSuggestionCarousel && suggestions.length > 0) {
-			const suggestion = suggestions[suggestionIndex] ?? suggestions[0];
+			const suggestion = suggestions[suggestionIndex] ?? "";
 			return {
-				key: `suggestion:${suggestionIndex}:${suggestion}`,
-				text: `你可以說說：${suggestion}`,
+				key: `suggestion:${suggestionIndex}`,
+				text: `試著說 : ${suggestion}`,
+				typewriter: true,
 				className:
-					"text-[clamp(1rem,1.9vw,1.25rem)] font-normal tracking-[0.01em] text-slate-600",
+					"text-[clamp(1rem,1.9vw,1.25rem)] font-normal tracking-[0.01em] text-slate-600/60",
 			};
 		}
 		return {
 			key: `status:${statusText}`,
 			text: statusText,
+			typewriter: false,
 			className: "text-[0.98rem] tracking-[0.03em] text-slate-600",
 		};
 	}, [
@@ -83,7 +87,15 @@ export default function CenterFeedback({
 							transition={{ duration: 0.32, ease: "easeOut" }}
 							className={`w-full text-center ${view.className}`}
 						>
-							{view.text}
+							{view.typewriter ? (
+								<TypewriterText
+									text={view.text}
+									startDelayMs={240}
+									charDelayMs={46}
+								/>
+							) : (
+								view.text
+							)}
 						</motion.p>
 					) : (
 						<motion.div
