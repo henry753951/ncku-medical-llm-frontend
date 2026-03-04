@@ -99,7 +99,9 @@ export default function SettingsModal({
 												value={selectedDeviceId || "__default__"}
 												onChange={(value) => {
 													if (typeof value === "string") {
-														onDeviceChange(value === "__default__" ? "" : value);
+														onDeviceChange(
+															value === "__default__" ? "" : value,
+														);
 													}
 												}}
 												className="w-full"
@@ -127,7 +129,10 @@ export default function SettingsModal({
 										</div>
 
 										<div className="grid gap-2">
-											<label htmlFor="mic-gain" className="text-sm text-slate-600">
+											<label
+												htmlFor="mic-gain"
+												className="text-sm text-slate-600"
+											>
 												麥克風音量增益 {micGain.toFixed(1)}x
 											</label>
 											<Slider
@@ -152,7 +157,9 @@ export default function SettingsModal({
 										</div>
 
 										<div className="grid gap-2">
-											<Label className="text-sm text-slate-600">即時音量監看</Label>
+											<Label className="text-sm text-slate-600">
+												即時音量監看
+											</Label>
 											<div className="h-3 overflow-hidden rounded-full border border-blue-200/90 bg-blue-100/70">
 												<div
 													className={`h-full rounded-full ${isClipping ? "bg-red-500" : "bg-blue-400"}`}
@@ -197,7 +204,10 @@ export default function SettingsModal({
 									className="overlay-scrollbar h-[312px] w-full overflow-y-auto px-4 pr-2"
 								>
 									<div className="grid gap-2">
-										<label htmlFor="request-timeout" className="text-sm text-slate-600">
+										<label
+											htmlFor="request-timeout"
+											className="text-sm text-slate-600"
+										>
 											最長等待時間 {Math.round(requestTimeoutMs / 1000)} 秒
 										</label>
 										<Slider
@@ -210,8 +220,9 @@ export default function SettingsModal({
 											value={Math.round(requestTimeoutMs / 1000)}
 											onChange={(value) =>
 												onRequestTimeoutChange(
-													(typeof value === "number" ? value : (value[0] ?? 20)) *
-														1000,
+													(typeof value === "number"
+														? value
+														: (value[0] ?? 20)) * 1000,
 												)
 											}
 										>

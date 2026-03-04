@@ -5,4 +5,3 @@ export default function StrokeVoiceApp() {
 	const controller = useStrokeVoiceAppController();
 	return <StrokeVoiceScene controller={controller} />;
 }
-

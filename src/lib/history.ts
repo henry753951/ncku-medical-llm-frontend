@@ -25,8 +25,8 @@ export const createHistoryRecord = (input: {
 	errorReason?: string;
 }): HistoryRecord => {
 	const questionName =
-		QUESTION_OPTIONS.find((option) => option.code === input.questionCode)?.name ??
-		input.questionCode;
+		QUESTION_OPTIONS.find((option) => option.code === input.questionCode)
+			?.name ?? input.questionCode;
 
 	return {
 		id: crypto.randomUUID(),
@@ -38,4 +38,3 @@ export const createHistoryRecord = (input: {
 		time: formatTime(),
 	};
 };
-
