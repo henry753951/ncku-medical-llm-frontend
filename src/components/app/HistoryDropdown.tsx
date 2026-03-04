@@ -48,7 +48,7 @@ export default function HistoryDropdown({
 		return {
 			...record,
 			questionCode: code,
-			questionName: name || "未命名題目",
+			questionName: name || "未命名類別",
 		};
 	});
 

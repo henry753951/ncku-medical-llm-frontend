@@ -93,13 +93,13 @@ export const useEvaluateFlow = () => {
 				if (!evaluateResponse.ok) {
 					const message = await extractErrorMessage(
 						evaluateResponse,
-						"題目判斷服務暫時無法使用。",
+						"判斷服務暫時無法使用。",
 					);
 					setState("error");
 					setError(message);
 					throw new Error(message);
 				}
-
+				// TODO: Replace with live backend response once API is ready.
 				const evaluateJson = (await evaluateResponse.json()) as ApiResponse;
 				const result = Boolean(evaluateJson.result);
 				setLastResult(result);
