@@ -1,22 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockLoadQuestionOptions } = vi.hoisted(() => ({
-	mockLoadQuestionOptions: vi.fn(),
-}));
-
 vi.mock("../../lib/server/questions", () => ({
-	loadQuestionOptions: mockLoadQuestionOptions,
+	loadQuestionOptions: vi.fn(),
 }));
 
+import { loadQuestionOptions } from "../../lib/server/questions";
 import { GET } from "./questions";
 
 describe("GET /api/questions", () => {
+	const mockedLoadQuestionOptions = vi.mocked(loadQuestionOptions);
+
 	beforeEach(() => {
-		mockLoadQuestionOptions.mockReset();
+		mockedLoadQuestionOptions.mockReset();
 	});
 
 	it("returns 200 with questions payload", async () => {
-		mockLoadQuestionOptions.mockResolvedValueOnce([
+		mockedLoadQuestionOptions.mockResolvedValueOnce([
 			{
 				code: "1A",
 				name: "Level of consciousness",
@@ -34,7 +33,7 @@ describe("GET /api/questions", () => {
 	});
 
 	it("returns 500 when loading questions fails", async () => {
-		mockLoadQuestionOptions.mockRejectedValueOnce(new Error("broken file"));
+		mockedLoadQuestionOptions.mockRejectedValueOnce(new Error("broken file"));
 
 		const response = await GET({} as never);
 		const body = await response.json();

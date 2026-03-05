@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockLoadQuestionOptions } = vi.hoisted(() => ({
-	mockLoadQuestionOptions: vi.fn(),
-}));
-
 vi.mock("../../lib/server/questions", () => ({
-	loadQuestionOptions: mockLoadQuestionOptions,
+	loadQuestionOptions: vi.fn(),
 }));
 
 vi.mock("../../lib/server/env", () => ({
@@ -15,6 +11,7 @@ vi.mock("../../lib/server/env", () => ({
 }));
 
 import { POST } from "./evaluate";
+import { loadQuestionOptions } from "../../lib/server/questions";
 
 const createJsonRequest = (payload: unknown) =>
 	new Request("http://localhost/api/evaluate", {
@@ -26,8 +23,10 @@ const createJsonRequest = (payload: unknown) =>
 	});
 
 describe("POST /api/evaluate", () => {
+	const mockedLoadQuestionOptions = vi.mocked(loadQuestionOptions);
+
 	beforeEach(() => {
-		mockLoadQuestionOptions.mockReset();
+		mockedLoadQuestionOptions.mockReset();
 		vi.restoreAllMocks();
 	});
 
@@ -55,7 +54,7 @@ describe("POST /api/evaluate", () => {
 	});
 
 	it("returns 500 when questions config fails", async () => {
-		mockLoadQuestionOptions.mockRejectedValueOnce(new Error("bad config"));
+		mockedLoadQuestionOptions.mockRejectedValueOnce(new Error("bad config"));
 
 		const response = await POST({
 			request: createJsonRequest({ question: "1A", text: "hello" }),
@@ -67,7 +66,7 @@ describe("POST /api/evaluate", () => {
 	});
 
 	it("returns 400 for unknown question code", async () => {
-		mockLoadQuestionOptions.mockResolvedValueOnce([
+		mockedLoadQuestionOptions.mockResolvedValueOnce([
 			{ code: "1B", name: "q", description: "d", examples: ["x"] },
 		]);
 
@@ -81,7 +80,7 @@ describe("POST /api/evaluate", () => {
 	});
 
 	it("returns 502 when upstream is unreachable", async () => {
-		mockLoadQuestionOptions.mockResolvedValueOnce([
+		mockedLoadQuestionOptions.mockResolvedValueOnce([
 			{ code: "1A", name: "q", description: "d", examples: ["x"] },
 		]);
 		vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network"));
@@ -96,7 +95,7 @@ describe("POST /api/evaluate", () => {
 	});
 
 	it("returns 502 when upstream response schema is invalid", async () => {
-		mockLoadQuestionOptions.mockResolvedValueOnce([
+		mockedLoadQuestionOptions.mockResolvedValueOnce([
 			{ code: "1A", name: "q", description: "d", examples: ["x"] },
 		]);
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -113,7 +112,7 @@ describe("POST /api/evaluate", () => {
 	});
 
 	it("returns 200 for valid upstream response", async () => {
-		mockLoadQuestionOptions.mockResolvedValueOnce([
+		mockedLoadQuestionOptions.mockResolvedValueOnce([
 			{ code: "1A", name: "q", description: "d", examples: ["x"] },
 		]);
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

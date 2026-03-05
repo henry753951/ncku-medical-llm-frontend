@@ -40,80 +40,95 @@ Example:
 
 ```json
 [
-	{
-		"code": "1A",
-		"name": "Level of consciousness",
-		"description": "此項目是辨別病患意識狀態...",
-		"examples": ["先生，你覺得怎麼樣？有哪裡不舒服嗎？"]
-	}
+ {
+  "code": "1A",
+  "name": "Level of consciousness",
+  "description": "此項目是辨別病患意識狀態...",
+  "examples": ["先生，你覺得怎麼樣？有哪裡不舒服嗎？"]
+ }
 ]
 ```
 
-## Docker Deployment
+## Development (Local)
 
-This repository includes:
-
-- `deploy/Dockerfile`
-- `deploy/docker-compose.yml`
-
-Build and run:
-
-```bash
-docker compose -f deploy/docker-compose.yml up -d --build
-```
-
-Check logs:
-
-```bash
-docker compose -f deploy/docker-compose.yml logs -f
-```
-
-Stop:
-
-```bash
-docker compose -f deploy/docker-compose.yml down
-```
-
-The app is exposed at `http://localhost:4321`.
-
-## Development
-
-### Getting Started
-
-Install dependencies:
+### 1) Install dependencies
 
 ```bash
 bun install
 ```
 
-Start dev server:
+### 2) Run dev server
 
 ```bash
 bun run dev
 ```
 
-Build production output:
+Open `http://localhost:4321`.
 
-```bash
-bun run build
-```
-
-Preview production build locally:
-
-```bash
-bun run preview
-```
-
-### Lint and Format
-
-Run lint (auto-fix enabled by script):
+### 3) Lint and format
 
 ```bash
 bun run lint
+bun run format
 ```
 
-Run formatter:
+## Local Production Preview
+
+Use this when you want to test the production build locally.
+
+### Bash / zsh
 
 ```bash
-bun run format
+bun install --frozen-lockfile
+bun run build
+GROQ_API_KEY=your_api_key \
+GROQ_TRANSCRIBE_MODEL=whisper-large-v3-turbo \
+EVALUATE_API_URL=http://xx.xx.xx.xx/evaluate \
+bun run preview
+```
+
+### PowerShell
+
+```powershell
+bun install --frozen-lockfile
+bun run build
+$env:GROQ_API_KEY="your_api_key"
+$env:GROQ_TRANSCRIBE_MODEL="whisper-large-v3-turbo"
+$env:EVALUATE_API_URL="http://xx.xx.xx.xx/evaluate"
+bun run preview
+```
+
+## Deployment (Docker)
+
+### Files
+
+- `deploy/Dockerfile`
+- `deploy/docker-compose.yml`
+
+### Build and run
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+### Logs
+
+```bash
+docker compose -f deploy/docker-compose.yml logs -f
+```
+
+### Stop
+
+```bash
+docker compose -f deploy/docker-compose.yml down
+```
+
+Service URL: `http://localhost:4321`.
+
+### Lockfile note
+
+The Docker build uses `bun install --frozen-lockfile`. If you changed `package.json`, update and commit `bun.lock` first:
+
+```bash
+bun install
 ```

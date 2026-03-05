@@ -38,7 +38,9 @@ describe("POST /api/transcribe", () => {
 
 	it("returns 400 when audio is missing", async () => {
 		const formData = new FormData();
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(400);
@@ -52,7 +54,9 @@ describe("POST /api/transcribe", () => {
 			new File(["abc"], "recording.txt", { type: "text/plain" }),
 		);
 
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(400);
@@ -67,7 +71,9 @@ describe("POST /api/transcribe", () => {
 		);
 		vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("network"));
 
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(502);
@@ -84,7 +90,9 @@ describe("POST /api/transcribe", () => {
 			new Response("forbidden", { status: 401 }),
 		);
 
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(502);
@@ -101,7 +109,9 @@ describe("POST /api/transcribe", () => {
 			new Response(JSON.stringify({ text: "" }), { status: 200 }),
 		);
 
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(422);
@@ -125,7 +135,9 @@ describe("POST /api/transcribe", () => {
 			),
 		);
 
-		const response = await POST({ request: createMultipartRequest(formData) } as never);
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
 		const body = await response.json();
 
 		expect(response.status).toBe(200);

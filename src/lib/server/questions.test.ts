@@ -41,7 +41,9 @@ describe("questionsSchema", () => {
 		const parsed = questionsSchema.safeParse(input);
 		expect(parsed.success).toBe(false);
 		if (!parsed.success) {
-			expect(parsed.error.issues[0]?.message).toContain("duplicate question code");
+			expect(parsed.error.issues[0]?.message).toContain(
+				"duplicate question code",
+			);
 		}
 	});
 
