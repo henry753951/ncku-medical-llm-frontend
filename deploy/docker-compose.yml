@@ -1,3 +1,5 @@
+name: ncku-medical-llm-frontend
+
 services:
   web:
     build:
