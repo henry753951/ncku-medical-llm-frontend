@@ -19,6 +19,7 @@
 		"@heroui/react": "^3.0.0-beta.8",
 		"@heroui/styles": "^3.0.0-beta.8",
 		"@tailwindcss/vite": "^4.2.1",
+		"@types/node": "^25.3.3",
 		"@types/opencc-js": "^1.0.3",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
