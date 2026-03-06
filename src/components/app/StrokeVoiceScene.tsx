@@ -40,8 +40,13 @@ export default function StrokeVoiceScene({
 				}`}
 			>
 				<TopControlBar
+					questionOptions={controller.questionOptions}
 					selectedQuestion={controller.selectedQuestion}
-					disabled={controller.busy || controller.recorder.isRecording}
+					disabled={
+						controller.busy ||
+						controller.recorder.isRecording ||
+						controller.questionsLoading
+					}
 					onQuestionChange={controller.setSelectedQuestion}
 					historyControl={
 						<HistoryDropdown
@@ -122,6 +127,8 @@ export default function StrokeVoiceScene({
 									controller.textTranscript
 								}
 								resultText={controller.resultText}
+								resultReason={controller.resultReason}
+								resultLatency={controller.resultLatency}
 								isMatch={Boolean(controller.evaluateFlow.lastResult)}
 								error={controller.effectiveError}
 							/>

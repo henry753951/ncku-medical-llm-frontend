@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { serverEnv } from "../../lib/server/env";
+import { loadQuestionOptions } from "../../lib/server/questions";
 import {
 	evaluateRequestSchema,
 	evaluateResponseSchema,
@@ -31,6 +32,22 @@ export const POST: APIRoute = async ({ request }) => {
 			parsedRequest.error.issues[0]?.message ??
 				"Invalid evaluate request format.",
 		);
+	}
+
+	let questionCodes: string[];
+	try {
+		const questions = await loadQuestionOptions();
+		questionCodes = questions.map((question) => question.code);
+	} catch (error) {
+		return toError(
+			500,
+			"INVALID_QUESTIONS_CONFIG",
+			error instanceof Error ? error.message : "Failed to load questions.json.",
+		);
+	}
+
+	if (!questionCodes.includes(parsedRequest.data.question)) {
+		return toError(400, "INVALID_QUESTION", "無效題號");
 	}
 
 	let upstreamResponse: Response;
@@ -75,7 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
 		return toError(
 			502,
 			"EVALUATE_SCHEMA_MISMATCH",
-			"Evaluate backend response must include { result: boolean }.",
+			"Evaluate backend response must include { result: string, reason: string, latency?: number }.",
 		);
 	}
 

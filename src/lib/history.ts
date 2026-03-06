@@ -1,4 +1,4 @@
-import { QUESTION_OPTIONS, type QuestionCode } from "./questions";
+import type { QuestionCode } from "./questions";
 
 export type HistoryRecord = {
 	id: string;
@@ -20,18 +20,15 @@ const formatTime = () =>
 
 export const createHistoryRecord = (input: {
 	questionCode: QuestionCode;
+	questionName?: string;
 	text?: string;
 	result: boolean | null;
 	errorReason?: string;
 }): HistoryRecord => {
-	const questionName =
-		QUESTION_OPTIONS.find((option) => option.code === input.questionCode)
-			?.name ?? input.questionCode;
-
 	return {
 		id: crypto.randomUUID(),
 		questionCode: input.questionCode,
-		questionName,
+		questionName: input.questionName ?? input.questionCode,
 		text: input.text,
 		result: input.result,
 		errorReason: input.errorReason,

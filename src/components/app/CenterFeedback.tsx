@@ -9,6 +9,8 @@ type CenterFeedbackProps = {
 	statusText: string;
 	transcript: string;
 	resultText: string;
+	resultReason: string | null;
+	resultLatency: number | null;
 	isMatch: boolean;
 	error: string | null;
 };
@@ -19,6 +21,8 @@ export default function CenterFeedback({
 	statusText,
 	transcript,
 	resultText,
+	resultReason,
+	resultLatency,
 	isMatch,
 	error,
 }: CenterFeedbackProps) {
@@ -74,6 +78,9 @@ export default function CenterFeedback({
 		transcript,
 	]);
 
+	const showStatusWithSuggestion =
+		!hasTranscript && showSuggestionCarousel && statusText.trim().length > 0;
+
 	return (
 		<div className="flex max-w-[min(88vw,820px)] flex-col items-center gap-4">
 			<div className="flex min-h-[112px] w-full items-center justify-center px-4">
@@ -121,17 +128,44 @@ export default function CenterFeedback({
 							<span className="text-sm">{error}</span>
 						</motion.div>
 					) : resultText ? (
-						<motion.p
-							key={`result:${resultText}`}
+						<motion.div
+							key={`result:${resultText}:${resultReason ?? ""}:${resultLatency ?? ""}`}
 							initial={{ opacity: 0, filter: "blur(8px)" }}
 							animate={{ opacity: 1, filter: "blur(0px)" }}
 							exit={{ opacity: 0, filter: "blur(8px)" }}
 							transition={{ duration: 0.24, ease: "easeOut" }}
-							className={`text-center text-base font-semibold ${
-								isMatch ? "text-emerald-700" : "text-rose-600"
-							}`}
+							className="max-w-[min(88vw,760px)] text-center"
 						>
-							{resultText}
+							<p
+								className={`text-base font-semibold ${
+									isMatch ? "text-emerald-700" : "text-rose-600"
+								}`}
+							>
+								{resultText}
+							</p>
+							{resultReason ? (
+								<p className="mt-1 text-xs leading-relaxed text-slate-600">
+									{resultReason}
+									{resultLatency !== null
+										? ` (${resultLatency.toFixed(2)}s)`
+										: ""}
+								</p>
+							) : resultLatency !== null ? (
+								<p className="mt-1 text-xs leading-relaxed text-slate-600">
+									耗時 {resultLatency.toFixed(2)}s
+								</p>
+							) : null}
+						</motion.div>
+					) : showStatusWithSuggestion ? (
+						<motion.p
+							key={`status-with-suggestion:${statusText}`}
+							initial={{ opacity: 0, filter: "blur(8px)" }}
+							animate={{ opacity: 1, filter: "blur(0px)" }}
+							exit={{ opacity: 0, filter: "blur(8px)" }}
+							transition={{ duration: 0.24, ease: "easeOut" }}
+							className="text-center text-sm tracking-[0.03em] text-slate-600"
+						>
+							{statusText}
 						</motion.p>
 					) : (
 						<motion.div

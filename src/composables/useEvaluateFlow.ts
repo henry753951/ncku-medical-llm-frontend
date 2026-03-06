@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type { QuestionCode } from "../lib/questions";
+import type { EvaluateResponse } from "../lib/server/schemas";
 import type { EvaluateState } from "../lib/types";
 
 type ApiRequestInput = {
@@ -8,9 +9,7 @@ type ApiRequestInput = {
 	timeoutMs: number;
 };
 
-type ApiResponse = {
-	result: boolean;
-};
+type ApiResponse = EvaluateResponse;
 
 type ApiError = {
 	error?: string;
@@ -59,6 +58,8 @@ export const useEvaluateFlow = () => {
 	const [state, setState] = useState<EvaluateState>("idle");
 	const [error, setError] = useState<string | null>(null);
 	const [lastResult, setLastResult] = useState<boolean | null>(null);
+	const [lastReason, setLastReason] = useState<string | null>(null);
+	const [lastLatency, setLastLatency] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [activeController, setActiveController] =
 		useState<AbortController | null>(null);
@@ -71,6 +72,8 @@ export const useEvaluateFlow = () => {
 			setIsSubmitting(true);
 			setError(null);
 			setLastResult(null);
+			setLastReason(null);
+			setLastLatency(null);
 			setState("checking");
 
 			const controller = new AbortController();
@@ -99,12 +102,24 @@ export const useEvaluateFlow = () => {
 					setError(message);
 					throw new Error(message);
 				}
-				// TODO: Replace with live backend response once API is ready.
 				const evaluateJson = (await evaluateResponse.json()) as ApiResponse;
-				const result = Boolean(evaluateJson.result);
+				const normalizedResult = evaluateJson.result.trim();
+				const result = normalizedResult === "成功";
 				setLastResult(result);
-				setState(result ? "match" : "mismatch");
-				return { result };
+				setLastReason(evaluateJson.reason);
+				setLastLatency(evaluateJson.latency ?? null);
+
+				if (normalizedResult === "Error") {
+					setState("error");
+					setError(evaluateJson.reason);
+				} else {
+					setState(result ? "match" : "mismatch");
+				}
+
+				return {
+					...evaluateJson,
+					isMatch: result,
+				};
 			} catch (submitError) {
 				if (submitError instanceof Error && submitError.name === "AbortError") {
 					const message = "已中止送出或等待逾時，請再試一次。";
@@ -130,12 +145,16 @@ export const useEvaluateFlow = () => {
 		setState("idle");
 		setError(null);
 		setLastResult(null);
+		setLastReason(null);
+		setLastLatency(null);
 	}, [activeController]);
 
 	return {
 		state,
 		error,
 		lastResult,
+		lastReason,
+		lastLatency,
 		isSubmitting,
 		submit,
 		abort,

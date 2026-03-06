@@ -2,8 +2,9 @@ import { Chip, Dropdown, Label } from "@heroui/react";
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { QUESTION_OPTIONS, type QuestionCode } from "../../lib/questions";
+import type { QuestionCode, QuestionOption } from "../../lib/questions";
 type TopControlBarProps = {
+	questionOptions: QuestionOption[];
 	selectedQuestion: QuestionCode;
 	disabled: boolean;
 	onQuestionChange: (question: QuestionCode) => void;
@@ -12,6 +13,7 @@ type TopControlBarProps = {
 };
 
 export default function TopControlBar({
+	questionOptions,
 	selectedQuestion,
 	disabled,
 	onQuestionChange,
@@ -19,8 +21,8 @@ export default function TopControlBar({
 	settingsControl,
 }: TopControlBarProps) {
 	const selectedOption =
-		QUESTION_OPTIONS.find((option) => option.code === selectedQuestion) ??
-		QUESTION_OPTIONS[0];
+		questionOptions.find((option) => option.code === selectedQuestion) ??
+		questionOptions[0];
 
 	return (
 		<div
@@ -46,9 +48,11 @@ export default function TopControlBar({
 								color="accent"
 								className="min-w-11 justify-center text-xs font-semibold text-slate-700"
 							>
-								{selectedOption.code}
+								{selectedOption?.code ?? "--"}
 							</Chip>
-							<span className="truncate">{selectedOption.name}</span>
+							<span className="truncate">
+								{selectedOption?.name ?? "尚未載入題目"}
+							</span>
 							<ChevronDown
 								size={16}
 								strokeWidth={2.6}
@@ -68,7 +72,7 @@ export default function TopControlBar({
 								}
 							}}
 						>
-							{QUESTION_OPTIONS.map((option) => (
+							{questionOptions.map((option) => (
 								<Dropdown.Item
 									id={option.code}
 									key={option.code}

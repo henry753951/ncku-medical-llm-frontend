@@ -1,0 +1,182 @@
+import { access, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { z } from "zod";
+
+export const questionOptionSchema = z.object({
+	code: z.string().trim().min(1, "code cannot be empty"),
+	name: z.string().trim().min(1, "name cannot be empty"),
+	description: z.string().trim().min(1, "description cannot be empty"),
+	examples: z.array(z.string().trim().min(1, "example cannot be empty")).min(1),
+});
+
+export const questionsSchema = z
+	.array(questionOptionSchema)
+	.min(1, "questions must include at least one question")
+	.superRefine((questions, context) => {
+		const seen = new Set<string>();
+		for (const [index, question] of questions.entries()) {
+			const code = question.code.trim();
+			if (seen.has(code)) {
+				context.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: [index, "code"],
+					message: `duplicate question code: ${code}`,
+				});
+				continue;
+			}
+			seen.add(code);
+		}
+	});
+
+const DEFAULT_QUESTIONS = [
+	{
+		code: "1A",
+		name: "Level of consciousness",
+		description:
+			"此項目是辨別病患意識狀態，多半是詢問病患是否有什麼不舒服，或是呼喚病患姓名，進行簡單寒暄後，即可判別。",
+		examples: ["先生，你覺得怎麼樣？有哪裡不舒服嗎？"],
+	},
+	{
+		code: "1B",
+		name: "LOC (questions)",
+		description:
+			"此項目有兩個問題，一個是詢問病患今年幾歲，第二個是詢問現在是幾月份。",
+		examples: [
+			"請問您今年幾歲？\n(病人實際年齡：______)",
+			"請問現在是幾月？\n(當時實際月份)",
+		],
+	},
+	{
+		code: "1C",
+		name: "LOC (commands)",
+		description:
+			"此項目有兩個指令，一個是要求病患閉眼後再睜眼，第二個是手握拳後再鬆開拳頭。",
+		examples: [
+			"請閉上您的雙眼。",
+			"請睜開您的雙眼。",
+			"請握緊您的拳頭。",
+			"請鬆開您的拳頭。",
+		],
+	},
+	{
+		code: "2",
+		name: "Best gaze",
+		description: "要求病患眼睛追蹤醫師在眼前的手指，跟著手指來回移動眼球。",
+		examples: ["先生，頭不要轉，請跟著我的手指看。"],
+	},
+	{
+		code: "3",
+		name: "Visual fields",
+		description: "要求病患用眼角餘光看醫師在視野中的手指揮動並回答哪一側有動。",
+		examples: ["先生，請您告訴我，哪一側的手指在動？\n哪一側有動？現在呢？"],
+	},
+	{
+		code: "4",
+		name: "Facial palsy",
+		description: "觀察臉部肌肉動作是否對稱。",
+		examples: ["請用力閉上您的眼睛", "請露出牙齒微笑。"],
+	},
+	{
+		code: "5aL",
+		name: "Left arm motor drift",
+		description: "請病患抬起左手臂並維持姿勢觀察是否下垂。",
+		examples: ["請將左手抬起90度，並維持10秒。"],
+	},
+	{
+		code: "5bR",
+		name: "Right arm motor drift",
+		description: "請病患抬起右手臂並維持姿勢觀察是否下垂。",
+		examples: ["請將右手抬起90度，並維持10秒。"],
+	},
+	{
+		code: "6aL",
+		name: "Left leg motor drift",
+		description: "請病患抬起左腳並維持姿勢觀察是否下垂。",
+		examples: ["請將左腳抬高30度，並維持5秒。"],
+	},
+	{
+		code: "6bR",
+		name: "Right leg motor drift",
+		description: "請病患抬起右腳並維持姿勢觀察是否下垂。",
+		examples: ["請將右腳抬高30度，並維持5秒。"],
+	},
+	{
+		code: "7",
+		name: "Limb Ataxia",
+		description: "評估四肢協調動作。",
+		examples: [
+			"左手食指點鼻子，再點我的手，來回循環做",
+			"右手食指點鼻子，再點我的手，來回循環做",
+			"用左腳腳跟碰右腳膝蓋，再往下碰到右腳腳踝。",
+			"用右腳腳跟碰左腳膝蓋，再往下碰到左腳腳踝。",
+		],
+	},
+	{
+		code: "8",
+		name: "Sensation",
+		description: "詢問左右兩側的觸覺感受是否一致。",
+		examples: ["先生，請告訴我，兩側的感受是否一致？"],
+	},
+	{
+		code: "9",
+		name: "Language/aphasia",
+		description: "評估病患語言能力，包括複誦、命名與圖片描述。",
+		examples: [
+			"來，請跟著我一起念。成大急診室有很多人。今天天氣很好，我要去買菜。",
+			"請問這是什麼？這個呢？",
+			"請描述這張圖",
+		],
+	},
+	{
+		code: "10",
+		name: "Dysarthria",
+		description: "評估構音能力。",
+		examples: ["請跟著我一起念喔。爸爸媽媽可口可樂負負得正啦啦隊伍"],
+	},
+	{
+		code: "11",
+		name: "Extinction/inattention",
+		description: "評估視覺、聽覺與觸覺的忽略現象。",
+		examples: [
+			"先生，眼睛請閉起來，哪邊有聲音？",
+			"再來，請直視前方，用餘光告訴我哪一邊在動？",
+			"等一下請告訴我，哪一邊有感覺到觸碰？",
+		],
+	},
+] satisfies z.input<typeof questionsSchema>;
+
+const questionsFilePath = path.join(process.cwd(), "questions.json");
+
+const ensureQuestionsFile = async () => {
+	try {
+		await access(questionsFilePath);
+	} catch {
+		await writeFile(
+			questionsFilePath,
+			`${JSON.stringify(DEFAULT_QUESTIONS, null, 2)}\n`,
+			"utf8",
+		);
+	}
+};
+
+export const loadQuestionOptions = async () => {
+	await ensureQuestionsFile();
+
+	const content = await readFile(questionsFilePath, "utf8");
+	let json: unknown;
+	try {
+		json = JSON.parse(content);
+	} catch {
+		throw new Error("questions.json is not valid JSON.");
+	}
+
+	const parsed = questionsSchema.safeParse(json);
+	if (!parsed.success) {
+		const firstIssue = parsed.error.issues[0];
+		throw new Error(
+			`Invalid questions.json format at ${firstIssue?.path.join(".") || "root"}: ${firstIssue?.message || "unknown issue"}`,
+		);
+	}
+
+	return parsed.data;
+};
