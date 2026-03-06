@@ -25,6 +25,7 @@ Question metadata is loaded from backend at runtime.
 - File path: project root `questions.json`
 - Frontend source: `GET /api/questions`
 - If `questions.json` does not exist, backend will auto-create it with default content.
+- IDE schema hint: `questions.json` is mapped to `questions.schema.json` via `.vscode/settings.json`.
 
 ### JSON format
 

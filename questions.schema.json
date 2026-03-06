@@ -1,0 +1,35 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://ncku-medical-llm-frontend.local/questions.schema.json",
+	"title": "NCKU Questions Config",
+	"type": "array",
+	"minItems": 1,
+	"items": {
+		"type": "object",
+		"additionalProperties": false,
+		"required": ["code", "name", "description", "examples"],
+		"properties": {
+			"code": {
+				"type": "string",
+				"minLength": 1,
+				"description": "Unique question code, e.g. 1A, 5aL."
+			},
+			"name": {
+				"type": "string",
+				"minLength": 1
+			},
+			"description": {
+				"type": "string",
+				"minLength": 1
+			},
+			"examples": {
+				"type": "array",
+				"minItems": 1,
+				"items": {
+					"type": "string",
+					"minLength": 1
+				}
+			}
+		}
+	}
+}
