@@ -336,13 +336,22 @@ export const useStrokeVoiceAppController = () => {
 		setTextTranscript("");
 	};
 
+	const handleQuestionChange = (question: QuestionCode) => {
+		abortActiveSubmit();
+		setSelectedQuestion(question);
+		setLocalError(null);
+		setTextTranscript("");
+		transcriptionFlow.reset();
+		evaluateFlow.reset();
+	};
+
 	return {
 		requestTimeoutMs,
 		setRequestTimeoutMs,
 		questionOptions,
 		questionsLoading,
 		selectedQuestion,
-		setSelectedQuestion,
+		setSelectedQuestion: handleQuestionChange,
 		historyRecords,
 		setHistoryRecords,
 		stackDescription,

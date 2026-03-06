@@ -60,7 +60,10 @@ export default function TopControlBar({
 							/>
 						</div>
 					</Dropdown.Trigger>
-					<Dropdown.Popover placement="bottom" className="no-scrollbar">
+					<Dropdown.Popover
+						placement="bottom"
+						className="no-scrollbar !max-w-[min(96vw,760px)] rounded-xl"
+					>
 						<Dropdown.Menu
 							selectionMode="single"
 							selectedKeys={new Set([selectedQuestion])}
@@ -80,7 +83,7 @@ export default function TopControlBar({
 									className="rounded-xl px-3 py-2 text-sm data-[hover=true]:bg-sky-100/70"
 								>
 									<div className="inline-flex w-full items-center justify-between gap-2">
-										<div className="inline-flex items-center gap-2 pl-4">
+										<div className="inline-flex items-center gap-2 pl-4 pr-3">
 											<Chip
 												variant="soft"
 												color="accent"
