@@ -203,8 +203,8 @@ export default function HistoryDropdown({
 				) : null}
 			</Modal.Trigger>
 			<Modal.Backdrop className="fixed inset-0 bg-slate-900/20 backdrop-blur-md h-dvh">
-				<Modal.Container placement="center" className="fixed inset-0 p-4">
-					<Modal.Dialog className="grid w-full max-w-[min(96vw,880px)] gap-2 rounded-3xl border border-white/95 bg-white/92 p-3 shadow-[0_18px_70px_rgba(11,38,70,0.12)]">
+				<Modal.Container placement="center" className="p-4 sm:p-10">
+					<Modal.Dialog className="pointer-events-auto grid w-[min(96vw,880px)] gap-2 rounded-3xl border border-white/95 bg-white/92 p-3 shadow-[0_18px_70px_rgba(11,38,70,0.12)]">
 						<div className="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
 							<div className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-800">
 								<span>最近紀錄</span>

@@ -19,11 +19,16 @@ import { useEvaluateFlow } from "./useEvaluateFlow";
 import { useTranscriptionFlow } from "./useTranscriptionFlow";
 
 const REQUEST_TIMEOUT_STORAGE_KEY = "ncku.voice.requestTimeoutMs";
-const IOS_WAVE_INTERVAL_STORAGE_KEY = "ncku.voice.iosWaveIntervalMs";
+const WAVE_FPS_STORAGE_KEY = "ncku.voice.waveFps";
+const isIOSDevice = () =>
+	typeof navigator !== "undefined" &&
+	/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
+		navigator.userAgent || navigator.platform || "",
+	);
 
 export const useStrokeVoiceAppController = () => {
 	const [requestTimeoutMs, setRequestTimeoutMs] = useState(20000);
-	const [iosWaveUpdateIntervalMs, setIosWaveUpdateIntervalMs] = useState(140);
+	const [waveFps, setWaveFps] = useState(() => (isIOSDevice() ? 18 : 60));
 	const [questionOptions, setQuestionOptions] = useState<QuestionOption[]>([]);
 	const [questionsLoading, setQuestionsLoading] = useState(true);
 	const [selectedQuestion, setSelectedQuestion] = useState<QuestionCode>("");
@@ -112,8 +117,8 @@ export const useStrokeVoiceAppController = () => {
 		const savedTimeoutMs = Number(
 			window.localStorage.getItem(REQUEST_TIMEOUT_STORAGE_KEY),
 		);
-		const savedWaveIntervalMs = Number(
-			window.localStorage.getItem(IOS_WAVE_INTERVAL_STORAGE_KEY),
+		const savedWaveFps = Number(
+			window.localStorage.getItem(WAVE_FPS_STORAGE_KEY),
 		);
 		if (
 			Number.isFinite(savedTimeoutMs) &&
@@ -123,11 +128,11 @@ export const useStrokeVoiceAppController = () => {
 			setRequestTimeoutMs(savedTimeoutMs);
 		}
 		if (
-			Number.isFinite(savedWaveIntervalMs) &&
-			savedWaveIntervalMs >= 80 &&
-			savedWaveIntervalMs <= 260
+			Number.isFinite(savedWaveFps) &&
+			savedWaveFps >= 8 &&
+			savedWaveFps <= 60
 		) {
-			setIosWaveUpdateIntervalMs(savedWaveIntervalMs);
+			setWaveFps(savedWaveFps);
 		}
 	}, []);
 
@@ -195,11 +200,8 @@ export const useStrokeVoiceAppController = () => {
 		if (typeof window === "undefined") {
 			return;
 		}
-		window.localStorage.setItem(
-			IOS_WAVE_INTERVAL_STORAGE_KEY,
-			String(iosWaveUpdateIntervalMs),
-		);
-	}, [iosWaveUpdateIntervalMs]);
+		window.localStorage.setItem(WAVE_FPS_STORAGE_KEY, String(waveFps));
+	}, [waveFps]);
 
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(Date.now()), 400);
@@ -370,8 +372,8 @@ export const useStrokeVoiceAppController = () => {
 	return {
 		requestTimeoutMs,
 		setRequestTimeoutMs,
-		iosWaveUpdateIntervalMs,
-		setIosWaveUpdateIntervalMs,
+		waveFps,
+		setWaveFps,
 		questionOptions,
 		questionsLoading,
 		selectedQuestion,

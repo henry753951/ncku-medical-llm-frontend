@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 type IntelligenceWaveBackgroundProps = {
 	energy: number;
 	bars?: number[];
-	iosUpdateIntervalMs?: number;
+	targetFps?: number;
 };
 
 type WaveVisual = {
@@ -15,10 +15,9 @@ type WaveVisual = {
 const WIDTH = 1600;
 const HEIGHT = 900;
 const BASE_Y = HEIGHT - 80;
-const COMPUTE_INTERVAL_MS_DEFAULT = 52;
-const COMPUTE_INTERVAL_MS_IOS = 140;
-const MIN_IOS_INTERVAL_MS = 80;
-const MAX_IOS_INTERVAL_MS = 260;
+const DEFAULT_TARGET_FPS = 60;
+const MIN_TARGET_FPS = 8;
+const MAX_TARGET_FPS = 60;
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const isIOS = () =>
@@ -82,7 +81,7 @@ const initialVisual = computeVisualOnMain(0, 0.07);
 
 export default function IntelligenceWaveBackground({
 	energy,
-	iosUpdateIntervalMs,
+	targetFps,
 }: IntelligenceWaveBackgroundProps) {
 	const [visual, setVisual] = useState<WaveVisual>(initialVisual);
 	const workerRef = useRef<Worker | null>(null);
@@ -123,14 +122,11 @@ export default function IntelligenceWaveBackground({
 
 	useEffect(() => {
 		let raf = 0;
-		const iosInterval = Math.max(
-			MIN_IOS_INTERVAL_MS,
-			Math.min(
-				MAX_IOS_INTERVAL_MS,
-				Math.round(iosUpdateIntervalMs ?? COMPUTE_INTERVAL_MS_IOS),
-			),
+		const clampedFps = Math.max(
+			MIN_TARGET_FPS,
+			Math.min(MAX_TARGET_FPS, Math.round(targetFps ?? DEFAULT_TARGET_FPS)),
 		);
-		const baseInterval = ios ? iosInterval : COMPUTE_INTERVAL_MS_DEFAULT;
+		const baseInterval = 1000 / clampedFps;
 
 		const tick = (t: number) => {
 			if (lastTimeRef.current == null) {
@@ -153,7 +149,7 @@ export default function IntelligenceWaveBackground({
 			phaseRef.current = (phaseRef.current + dt * speed) % 100;
 
 			const energyFactor =
-				liveEnergyRef.current < 0.1 ? baseInterval * 1.45 : baseInterval;
+				ios && liveEnergyRef.current < 0.1 ? baseInterval * 1.45 : baseInterval;
 			if (t - lastComputeAtRef.current >= energyFactor) {
 				lastComputeAtRef.current = t;
 				const phase = phaseRef.current;
@@ -175,7 +171,7 @@ export default function IntelligenceWaveBackground({
 			lastTimeRef.current = null;
 			lastComputeAtRef.current = 0;
 		};
-	}, [ios, iosUpdateIntervalMs]);
+	}, [ios, targetFps]);
 
 	return (
 		<div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
