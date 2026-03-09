@@ -1,5 +1,6 @@
 import { Lock, Mic } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import WaveVisualizer from "./WaveVisualizer";
 
 type PushToTalkButtonProps = {
@@ -72,20 +73,23 @@ export default function PushToTalkButton({
 		[isRecording, locked, safeStop],
 	);
 
-	useEffect(() => {
-		const onWindowPointerUp = (e: PointerEvent) => {
+	const finalizePointer = useCallback(
+		(event: { pointerId: number } | null, actionId = actionIdRef.current) => {
 			if (!pressingRef.current) return;
-			if (pointerIdRef.current != null && e.pointerId !== pointerIdRef.current)
+			if (
+				pointerIdRef.current != null &&
+				event &&
+				event.pointerId !== pointerIdRef.current
+			)
 				return;
-
-			const actionId = actionIdRef.current;
-			const elapsed = performance.now() - startTimeRef.current;
 
 			pressingRef.current = false;
 			pointerIdRef.current = null;
 			setPressed(false);
-
+			const elapsed = performance.now() - startTimeRef.current;
 			const isTap = elapsed <= TAP_MAX_MS && !movedTooMuchRef.current;
+			startRequestedRef.current = false;
+			movedTooMuchRef.current = false;
 
 			if (isTap) {
 				if (locked) {
@@ -101,9 +105,13 @@ export default function PushToTalkButton({
 			}
 
 			if (!locked) void safeStop(actionId);
+		},
+		[isRecording, locked, safeStop],
+	);
 
-			startRequestedRef.current = false;
-			movedTooMuchRef.current = false;
+	useEffect(() => {
+		const onWindowPointerUp = (e: PointerEvent) => {
+			finalizePointer(e);
 		};
 
 		const onWindowPointerCancel = (e: PointerEvent) => {
@@ -137,9 +145,9 @@ export default function PushToTalkButton({
 			window.removeEventListener("blur", onWindowBlur);
 			window.removeEventListener("pointermove", onWindowPointerMove);
 		};
-	}, [cancelGesture, isRecording, locked, safeStop]);
+	}, [cancelGesture, finalizePointer]);
 
-	const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+	const handlePointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
 		if (disabled) return;
 		if (pressingRef.current) return;
 
@@ -154,6 +162,11 @@ export default function PushToTalkButton({
 		movedTooMuchRef.current = false;
 
 		setPressed(true);
+		try {
+			e.currentTarget.setPointerCapture(e.pointerId);
+		} catch {
+			// Ignore if browser does not allow capture in current context.
+		}
 
 		if (!isRecording) {
 			startRequestedRef.current = true;
@@ -161,6 +174,20 @@ export default function PushToTalkButton({
 		} else {
 			startRequestedRef.current = false;
 		}
+	};
+
+	const handlePointerUp = (e: ReactPointerEvent<HTMLButtonElement>) => {
+		if (disabled) return;
+		finalizePointer(e);
+		try {
+			e.currentTarget.releasePointerCapture(e.pointerId);
+		} catch {
+			// Ignore when capture is not active.
+		}
+	};
+
+	const handlePointerCancel = () => {
+		cancelGesture(actionIdRef.current);
 	};
 
 	const label = useMemo(() => {
@@ -175,6 +202,10 @@ export default function PushToTalkButton({
 		<button
 			type="button"
 			onPointerDown={handlePointerDown}
+			onPointerUp={handlePointerUp}
+			onPointerCancel={handlePointerCancel}
+			onContextMenu={(e) => e.preventDefault()}
+			style={{ touchAction: "manipulation" }}
 			disabled={disabled}
 			className={[
 				"group relative",

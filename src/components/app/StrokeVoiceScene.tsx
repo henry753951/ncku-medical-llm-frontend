@@ -20,18 +20,14 @@ export default function StrokeVoiceScene({
 }: StrokeVoiceSceneProps) {
 	return (
 		<div
-			className="relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_10%_20%,rgba(221,235,255,0.8),transparent_36%),radial-gradient(circle_at_88%_8%,rgba(220,246,244,0.84),transparent_28%),linear-gradient(160deg,#e9f0fb,#dae9f8_45%,#d5e5f2)] px-4 py-6 text-slate-900"
+			className="relative min-h-[100svh] min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_10%_20%,rgba(221,235,255,0.8),transparent_36%),radial-gradient(circle_at_88%_8%,rgba(220,246,244,0.84),transparent_28%),linear-gradient(160deg,#e9f0fb,#dae9f8_45%,#d5e5f2)] px-4 py-6 text-slate-900"
 			style={controller.shellStyle}
 		>
-			<div
-				className="pointer-events-none absolute inset-[-30vmax] z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.42),transparent_62%)] blur-[42px] transition"
-				style={{
-					filter: `blur(${48 - controller.analyser.level * 20}px)`,
-				}}
-			/>
+			<div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.38),transparent_64%)]" />
 			<IntelligenceWaveBackground
 				energy={controller.analyser.displayEnergy}
 				bars={controller.analyser.bars}
+				targetFps={controller.waveFps}
 			/>
 
 			<div
@@ -66,11 +62,13 @@ export default function StrokeVoiceScene({
 							selectedDeviceId={controller.recorder.selectedDeviceId}
 							micGain={controller.recorder.micGain}
 							requestTimeoutMs={controller.requestTimeoutMs}
+							waveFps={controller.waveFps}
 							devices={controller.devices}
 							onReloadDevices={() => void controller.refreshDevices()}
 							onDeviceChange={controller.recorder.setSelectedDeviceId}
 							onMicGainChange={controller.recorder.setMicGain}
 							onRequestTimeoutChange={controller.setRequestTimeoutMs}
+							onWaveFpsChange={controller.setWaveFps}
 						/>
 					}
 				/>

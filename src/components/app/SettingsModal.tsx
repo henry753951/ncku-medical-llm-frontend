@@ -15,27 +15,36 @@ type SettingsModalProps = {
 	isRecording: boolean;
 	selectedDeviceId: string;
 	micGain: number;
-	requestTimeoutMs: number;
+	requestTimeoutfps: number;
+	waveFps: number;
 	devices: MediaDeviceInfo[];
 	onReloadDevices: () => void;
 	onDeviceChange: (deviceId: string) => void;
 	onMicGainChange: (value: number) => void;
 	onRequestTimeoutChange: (value: number) => void;
+	onWaveFpsChange: (value: number) => void;
 };
 
 export default function SettingsModal({
 	isRecording,
 	selectedDeviceId,
 	micGain,
-	requestTimeoutMs,
+	requestTimeoutfps,
+	waveFps,
 	devices,
 	onReloadDevices,
 	onDeviceChange,
 	onMicGainChange,
 	onRequestTimeoutChange,
+	onWaveFpsChange,
 }: SettingsModalProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [tabKey, setTabKey] = useState<"audio" | "request">("audio");
+	const isIOSDevice =
+		typeof navigator !== "undefined" &&
+		/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
+			navigator.userAgent || navigator.platform || "",
+		);
 
 	const { previewLevel, isClipping, previewError } = useMicPreview({
 		enabled: isOpen,
@@ -54,11 +63,11 @@ export default function SettingsModal({
 
 	return (
 		<Modal onOpenChange={setIsOpen}>
-			<Modal.Trigger className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/70 text-slate-800 transition hover:bg-white">
+			<Modal.Trigger className="inline-flex h-8 w-8 cursor-pointer itefps-center justify-center rounded-full border border-white/70 bg-white/70 text-slate-800 transition hover:bg-white">
 				<Settings size={16} />
 			</Modal.Trigger>
-			<Modal.Backdrop className="bg-slate-900/20 backdrop-blur-md">
-				<Modal.Container placement="center" className="p-4">
+			<Modal.Backdrop className="fixed inset-0 bg-slate-900/20 backdrop-blur-md h-dvh">
+				<Modal.Container placement="center" className="fixed inset-0 p-4">
 					<Modal.Dialog className="grid w-full max-w-[560px] gap-4 rounded-3xl border border-white/95 bg-white/90 p-4 shadow-[0_18px_70px_rgba(11,38,70,0.12)]">
 						<Modal.CloseTrigger />
 						<Modal.Header>
@@ -168,13 +177,13 @@ export default function SettingsModal({
 													}}
 												/>
 											</div>
-											<div className="flex items-center justify-between gap-3 text-sm text-slate-600">
-												<span className="inline-flex items-center gap-1.5">
+											<div className="flex itefps-center justify-between gap-3 text-sm text-slate-600">
+												<span className="inline-flex itefps-center gap-1.5">
 													<Volume2 size={14} />
 													{previewLevel < 0.06 ? "幾乎無聲" : "有聲音輸入"}
 												</span>
 												<span
-													className={`inline-flex items-center gap-1.5 ${isClipping ? "font-semibold text-red-700" : ""}`}
+													className={`inline-flex itefps-center gap-1.5 ${isClipping ? "font-semibold text-red-700" : ""}`}
 												>
 													{isClipping ? <AlertTriangle size={14} /> : null}
 													{isClipping ? "可能爆音" : "訊號正常"}
@@ -203,12 +212,12 @@ export default function SettingsModal({
 									id="request"
 									className="overlay-scrollbar h-[312px] w-full overflow-y-auto px-4 pr-2"
 								>
-									<div className="grid gap-2">
+									<div className="grid gap-4">
 										<label
 											htmlFor="request-timeout"
 											className="text-sm text-slate-600"
 										>
-											最長等待時間 {Math.round(requestTimeoutMs / 1000)} 秒
+											最長等待時間 {Math.round(requestTimeoutfps / 1000)} 秒
 										</label>
 										<Slider
 											id="request-timeout"
@@ -217,7 +226,7 @@ export default function SettingsModal({
 											minValue={5}
 											maxValue={60}
 											step={1}
-											value={Math.round(requestTimeoutMs / 1000)}
+											value={Math.round(requestTimeoutfps / 1000)}
 											onChange={(value) =>
 												onRequestTimeoutChange(
 													(typeof value === "number"
@@ -234,6 +243,40 @@ export default function SettingsModal({
 										<p className="text-xs leading-relaxed text-slate-500">
 											超過設定秒數會自動中止語音辨識或判斷請求，避免卡住。
 										</p>
+										{isIOSDevice ? (
+											<div className="grid gap-2">
+												<label
+													htmlFor="ios-wave-interval"
+													className="text-sm text-slate-600"
+												>
+													背景波浪 FPS {waveFps} fps
+												</label>
+												<Slider
+													id="ios-wave-interval"
+													aria-label="背景波浪 FPS"
+													className="w-full"
+													minValue={80}
+													maxValue={260}
+													step={10}
+													value={waveFps}
+													onChange={(value) =>
+														onWaveFpsChange(
+															typeof value === "number"
+																? value
+																: (value[0] ?? 140),
+														)
+													}
+												>
+													<Slider.Track>
+														<Slider.Fill />
+														<Slider.Thumb />
+													</Slider.Track>
+												</Slider>
+												<p className="text-xs leading-relaxed text-slate-500">
+													數值越大越省電且較不卡，數值越小動畫越流暢。
+												</p>
+											</div>
+										) : null}
 									</div>
 								</Tabs.Panel>
 							</Tabs>
