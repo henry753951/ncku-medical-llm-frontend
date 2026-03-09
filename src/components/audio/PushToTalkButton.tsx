@@ -15,8 +15,14 @@ type PushToTalkButtonProps = {
 	onStop: () => Promise<void> | void;
 };
 
-const TAP_MAX_MS = 220;
+const TAP_MAX_MS_DEFAULT = 220;
+const TAP_MAX_MS_IOS = 360;
 const MOVE_TOLERANCE_PX = 10;
+const isIOSDevice = () =>
+	typeof navigator !== "undefined" &&
+	/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
+		navigator.userAgent || navigator.platform || "",
+	);
 
 export default function PushToTalkButton({
 	disabled = false,
@@ -27,6 +33,7 @@ export default function PushToTalkButton({
 }: PushToTalkButtonProps) {
 	const [locked, setLocked] = useState(false);
 	const [pressed, setPressed] = useState(false);
+	const tapMaxMs = isIOSDevice() ? TAP_MAX_MS_IOS : TAP_MAX_MS_DEFAULT;
 
 	const pointerIdRef = useRef<number | null>(null);
 	const pressingRef = useRef(false);
@@ -87,7 +94,7 @@ export default function PushToTalkButton({
 			pointerIdRef.current = null;
 			setPressed(false);
 			const elapsed = performance.now() - startTimeRef.current;
-			const isTap = elapsed <= TAP_MAX_MS && !movedTooMuchRef.current;
+			const isTap = elapsed <= tapMaxMs && !movedTooMuchRef.current;
 			startRequestedRef.current = false;
 			movedTooMuchRef.current = false;
 
@@ -106,7 +113,7 @@ export default function PushToTalkButton({
 
 			if (!locked) void safeStop(actionId);
 		},
-		[isRecording, locked, safeStop],
+		[isRecording, locked, safeStop, tapMaxMs],
 	);
 
 	useEffect(() => {

@@ -22,6 +22,18 @@
 		line-height: 1.5;
 	}
 
+	button,
+	[role="button"],
+	a,
+	label,
+	summary,
+	input[type="button"],
+	input[type="submit"],
+	input[type="reset"] {
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+
 	.no-scrollbar {
 		scrollbar-width: none;
 	}
