@@ -17,12 +17,14 @@ type SettingsModalProps = {
 	micGain: number;
 	requestTimeoutMs: number;
 	waveFps: number;
+	animationsEnabled: boolean;
 	devices: MediaDeviceInfo[];
 	onReloadDevices: () => void;
 	onDeviceChange: (deviceId: string) => void;
 	onMicGainChange: (value: number) => void;
 	onRequestTimeoutChange: (value: number) => void;
 	onWaveFpsChange: (value: number) => void;
+	onAnimationsEnabledChange: (value: boolean) => void;
 };
 
 export default function SettingsModal({
@@ -31,15 +33,17 @@ export default function SettingsModal({
 	micGain,
 	requestTimeoutMs,
 	waveFps,
+	animationsEnabled,
 	devices,
 	onReloadDevices,
 	onDeviceChange,
 	onMicGainChange,
 	onRequestTimeoutChange,
 	onWaveFpsChange,
+	onAnimationsEnabledChange,
 }: SettingsModalProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [tabKey, setTabKey] = useState<"audio" | "request">("audio");
+	const [tabKey, setTabKey] = useState<"audio" | "visual" | "request">("audio");
 	const isIOSDevice =
 		typeof navigator !== "undefined" &&
 		/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
@@ -66,7 +70,7 @@ export default function SettingsModal({
 			<Modal.Trigger className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/70 text-slate-800 transition hover:bg-white">
 				<Settings size={16} />
 			</Modal.Trigger>
-			<Modal.Backdrop className="fixed inset-0 bg-slate-900/20 backdrop-blur-md">
+			<Modal.Backdrop className="fixed inset-0 bg-slate-900/20 backdrop-blur-md h-dvh">
 				<Modal.Container placement="center" className="p-4 sm:p-10">
 					<Modal.Dialog className="pointer-events-auto grid w-[min(92vw,560px)] gap-4 rounded-3xl border border-white/95 bg-white/90 p-4 shadow-[0_18px_70px_rgba(11,38,70,0.12)]">
 						<Modal.CloseTrigger />
@@ -82,7 +86,13 @@ export default function SettingsModal({
 								orientation="vertical"
 								selectedKey={tabKey}
 								onSelectionChange={(key) =>
-									setTabKey(key === "request" ? "request" : "audio")
+									setTabKey(
+										key === "request"
+											? "request"
+											: key === "visual"
+												? "visual"
+												: "audio",
+									)
 								}
 							>
 								<Tabs.ListContainer className="p-1">
@@ -93,6 +103,10 @@ export default function SettingsModal({
 										</Tabs.Tab>
 										<Tabs.Tab id="request" className="justify-start">
 											請求
+											<Tabs.Indicator />
+										</Tabs.Tab>
+										<Tabs.Tab id="visual" className="justify-start">
+											視覺
 											<Tabs.Indicator />
 										</Tabs.Tab>
 									</Tabs.List>
@@ -194,40 +208,6 @@ export default function SettingsModal({
 											) : null}
 										</div>
 
-										<div className="grid gap-2">
-											<label
-												htmlFor="wave-fps"
-												className="text-sm text-slate-600"
-											>
-												背景波浪 FPS {waveFps}
-												{isIOSDevice ? "（iOS 預設 18）" : ""}
-											</label>
-											<Slider
-												id="wave-fps"
-												aria-label="背景波浪 FPS"
-												className="w-full"
-												minValue={8}
-												maxValue={60}
-												step={2}
-												value={waveFps}
-												onChange={(value) =>
-													onWaveFpsChange(
-														typeof value === "number"
-															? value
-															: (value[0] ?? 60),
-													)
-												}
-											>
-												<Slider.Track>
-													<Slider.Fill />
-													<Slider.Thumb />
-												</Slider.Track>
-											</Slider>
-											<p className="text-xs leading-relaxed text-slate-500">
-												FPS 越高動畫越流暢，但會增加耗電與發熱。
-											</p>
-										</div>
-
 										<div className="flex justify-end">
 											<Button
 												slot="close"
@@ -277,6 +257,80 @@ export default function SettingsModal({
 										<p className="text-xs leading-relaxed text-slate-500">
 											超過設定秒數會自動中止語音辨識或判斷請求，避免卡住。
 										</p>
+									</div>
+								</Tabs.Panel>
+
+								<Tabs.Panel
+									id="visual"
+									className="overlay-scrollbar h-[312px] w-full overflow-y-auto px-4 pr-2"
+								>
+									<div className="grid gap-4">
+										<div className="grid gap-2">
+											<label
+												htmlFor="wave-fps"
+												className="text-sm text-slate-600"
+											>
+												背景波浪 FPS {waveFps}
+												{isIOSDevice ? "（iOS 預設 18）" : ""}
+											</label>
+											<Slider
+												id="wave-fps"
+												aria-label="背景波浪 FPS"
+												className="w-full"
+												minValue={8}
+												maxValue={60}
+												step={2}
+												value={waveFps}
+												onChange={(value) =>
+													onWaveFpsChange(
+														typeof value === "number"
+															? value
+															: (value[0] ?? 60),
+													)
+												}
+											>
+												<Slider.Track>
+													<Slider.Fill />
+													<Slider.Thumb />
+												</Slider.Track>
+											</Slider>
+											<p className="text-xs leading-relaxed text-slate-500">
+												FPS 越高動畫越流暢，但會增加耗電與發熱。
+											</p>
+										</div>
+
+										<div className="grid gap-2">
+											<label
+												htmlFor="animations-enabled"
+												className="text-sm text-slate-600"
+											>
+												關閉動畫
+											</label>
+											<label
+												htmlFor="animations-enabled"
+												className="inline-flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-700"
+											>
+												<span>
+													{animationsEnabled
+														? "目前為開啟動畫"
+														: "目前為關閉動畫"}
+												</span>
+												<input
+													id="animations-enabled"
+													type="checkbox"
+													checked={!animationsEnabled}
+													onChange={(event) =>
+														onAnimationsEnabledChange(
+															!event.currentTarget.checked,
+														)
+													}
+													className="h-4 w-4"
+												/>
+											</label>
+											<p className="text-xs leading-relaxed text-slate-500">
+												開啟此選項後會停用背景動畫，降低裝置負擔。
+											</p>
+										</div>
 									</div>
 								</Tabs.Panel>
 							</Tabs>

@@ -28,6 +28,7 @@ export default function StrokeVoiceScene({
 				energy={controller.analyser.displayEnergy}
 				bars={controller.analyser.bars}
 				targetFps={controller.waveFps}
+				enabled={controller.animationsEnabled}
 			/>
 
 			<div
@@ -63,12 +64,14 @@ export default function StrokeVoiceScene({
 							micGain={controller.recorder.micGain}
 							requestTimeoutMs={controller.requestTimeoutMs}
 							waveFps={controller.waveFps}
+							animationsEnabled={controller.animationsEnabled}
 							devices={controller.devices}
 							onReloadDevices={() => void controller.refreshDevices()}
 							onDeviceChange={controller.recorder.setSelectedDeviceId}
 							onMicGainChange={controller.recorder.setMicGain}
 							onRequestTimeoutChange={controller.setRequestTimeoutMs}
 							onWaveFpsChange={controller.setWaveFps}
+							onAnimationsEnabledChange={controller.setAnimationsEnabled}
 						/>
 					}
 				/>

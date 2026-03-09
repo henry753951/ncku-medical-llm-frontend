@@ -4,6 +4,7 @@ type IntelligenceWaveBackgroundProps = {
 	energy: number;
 	bars?: number[];
 	targetFps?: number;
+	enabled?: boolean;
 };
 
 type WaveVisual = {
@@ -82,6 +83,7 @@ const initialVisual = computeVisualOnMain(0, 0.07);
 export default function IntelligenceWaveBackground({
 	energy,
 	targetFps,
+	enabled = true,
 }: IntelligenceWaveBackgroundProps) {
 	const [visual, setVisual] = useState<WaveVisual>(initialVisual);
 	const workerRef = useRef<Worker | null>(null);
@@ -93,10 +95,19 @@ export default function IntelligenceWaveBackground({
 	const ios = isIOS();
 
 	useEffect(() => {
+		if (!enabled) {
+			setVisual(initialVisual);
+			return;
+		}
 		inputEnergyRef.current = clamp01(energy);
-	}, [energy]);
+	}, [enabled, energy]);
 
 	useEffect(() => {
+		if (!enabled) {
+			workerRef.current?.terminate();
+			workerRef.current = null;
+			return;
+		}
 		if (typeof Worker === "undefined") {
 			workerRef.current = null;
 			return;
@@ -118,9 +129,12 @@ export default function IntelligenceWaveBackground({
 			workerRef.current?.terminate();
 			workerRef.current = null;
 		};
-	}, []);
+	}, [enabled]);
 
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		let raf = 0;
 		const clampedFps = Math.max(
 			MIN_TARGET_FPS,
@@ -171,7 +185,7 @@ export default function IntelligenceWaveBackground({
 			lastTimeRef.current = null;
 			lastComputeAtRef.current = 0;
 		};
-	}, [ios, targetFps]);
+	}, [enabled, ios, targetFps]);
 
 	return (
 		<div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">

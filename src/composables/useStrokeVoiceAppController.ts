@@ -20,6 +20,7 @@ import { useTranscriptionFlow } from "./useTranscriptionFlow";
 
 const REQUEST_TIMEOUT_STORAGE_KEY = "ncku.voice.requestTimeoutMs";
 const WAVE_FPS_STORAGE_KEY = "ncku.voice.waveFps";
+const ANIMATIONS_ENABLED_STORAGE_KEY = "ncku.voice.animationsEnabled";
 const isIOSDevice = () =>
 	typeof navigator !== "undefined" &&
 	/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
@@ -29,6 +30,7 @@ const isIOSDevice = () =>
 export const useStrokeVoiceAppController = () => {
 	const [requestTimeoutMs, setRequestTimeoutMs] = useState(20000);
 	const [waveFps, setWaveFps] = useState(() => (isIOSDevice() ? 18 : 60));
+	const [animationsEnabled, setAnimationsEnabled] = useState(true);
 	const [questionOptions, setQuestionOptions] = useState<QuestionOption[]>([]);
 	const [questionsLoading, setQuestionsLoading] = useState(true);
 	const [selectedQuestion, setSelectedQuestion] = useState<QuestionCode>("");
@@ -120,6 +122,9 @@ export const useStrokeVoiceAppController = () => {
 		const savedWaveFps = Number(
 			window.localStorage.getItem(WAVE_FPS_STORAGE_KEY),
 		);
+		const savedAnimationsEnabled = window.localStorage.getItem(
+			ANIMATIONS_ENABLED_STORAGE_KEY,
+		);
 		if (
 			Number.isFinite(savedTimeoutMs) &&
 			savedTimeoutMs >= 5000 &&
@@ -133,6 +138,9 @@ export const useStrokeVoiceAppController = () => {
 			savedWaveFps <= 60
 		) {
 			setWaveFps(savedWaveFps);
+		}
+		if (savedAnimationsEnabled === "0") {
+			setAnimationsEnabled(false);
 		}
 	}, []);
 
@@ -202,6 +210,16 @@ export const useStrokeVoiceAppController = () => {
 		}
 		window.localStorage.setItem(WAVE_FPS_STORAGE_KEY, String(waveFps));
 	}, [waveFps]);
+
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+		window.localStorage.setItem(
+			ANIMATIONS_ENABLED_STORAGE_KEY,
+			animationsEnabled ? "1" : "0",
+		);
+	}, [animationsEnabled]);
 
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(Date.now()), 400);
@@ -374,6 +392,8 @@ export const useStrokeVoiceAppController = () => {
 		setRequestTimeoutMs,
 		waveFps,
 		setWaveFps,
+		animationsEnabled,
+		setAnimationsEnabled,
 		questionOptions,
 		questionsLoading,
 		selectedQuestion,
