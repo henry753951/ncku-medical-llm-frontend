@@ -16,8 +16,9 @@ type PushToTalkButtonProps = {
 };
 
 const TAP_MAX_MS_DEFAULT = 220;
-const TAP_MAX_MS_IOS = 360;
+const TAP_MAX_MS_IOS = 520;
 const MOVE_TOLERANCE_PX = 10;
+const MOVE_TOLERANCE_PX_IOS = 18;
 const isIOSDevice = () =>
 	typeof navigator !== "undefined" &&
 	/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
@@ -33,7 +34,9 @@ export default function PushToTalkButton({
 }: PushToTalkButtonProps) {
 	const [locked, setLocked] = useState(false);
 	const [pressed, setPressed] = useState(false);
-	const tapMaxMs = isIOSDevice() ? TAP_MAX_MS_IOS : TAP_MAX_MS_DEFAULT;
+	const iosDevice = isIOSDevice();
+	const tapMaxMs = iosDevice ? TAP_MAX_MS_IOS : TAP_MAX_MS_DEFAULT;
+	const moveTolerancePx = iosDevice ? MOVE_TOLERANCE_PX_IOS : MOVE_TOLERANCE_PX;
 
 	const pointerIdRef = useRef<number | null>(null);
 	const pressingRef = useRef(false);
@@ -137,7 +140,7 @@ export default function PushToTalkButton({
 
 			const dx = e.clientX - startPosRef.current.x;
 			const dy = e.clientY - startPosRef.current.y;
-			if (dx * dx + dy * dy > MOVE_TOLERANCE_PX * MOVE_TOLERANCE_PX) {
+			if (dx * dx + dy * dy > moveTolerancePx * moveTolerancePx) {
 				movedTooMuchRef.current = true;
 			}
 		};
@@ -152,7 +155,7 @@ export default function PushToTalkButton({
 			window.removeEventListener("blur", onWindowBlur);
 			window.removeEventListener("pointermove", onWindowPointerMove);
 		};
-	}, [cancelGesture, finalizePointer]);
+	}, [cancelGesture, finalizePointer, moveTolerancePx]);
 
 	const handlePointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
 		if (disabled) return;

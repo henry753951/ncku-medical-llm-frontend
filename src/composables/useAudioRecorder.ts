@@ -8,6 +8,11 @@ const MIME_CANDIDATES = [
 ];
 const STORAGE_KEY_DEVICE = "ncku.voice.micDeviceId";
 const STORAGE_KEY_GAIN = "ncku.voice.micGain";
+const isIOSDevice = () =>
+	typeof navigator !== "undefined" &&
+	/iP(ad|hone|pod|one|touch)|iPad|iPhone|iPod/i.test(
+		navigator.userAgent || navigator.platform || "",
+	);
 
 export type RecorderState = "idle" | "recording" | "error";
 
@@ -33,9 +38,11 @@ const pickMimeType = () => {
 };
 
 export const useAudioRecorder = () => {
+	const keepMicAlive = isIOSDevice();
 	const recorderRef = useRef<MediaRecorder | null>(null);
 	const sourceStreamRef = useRef<MediaStream | null>(null);
 	const outputStreamRef = useRef<MediaStream | null>(null);
+	const persistentInputStreamRef = useRef<MediaStream | null>(null);
 	const audioContextRef = useRef<AudioContext | null>(null);
 	const gainNodeRef = useRef<GainNode | null>(null);
 	const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
@@ -88,10 +95,15 @@ export const useAudioRecorder = () => {
 		window.localStorage.setItem(STORAGE_KEY_GAIN, micGain.toFixed(2));
 	}, [micGain]);
 
-	const stopTracks = useCallback(() => {
+	const stopTracks = useCallback((preservePersistentInput = false) => {
 		if (sourceStreamRef.current) {
-			for (const track of sourceStreamRef.current.getTracks()) {
-				track.stop();
+			const shouldStopSource =
+				!preservePersistentInput ||
+				sourceStreamRef.current !== persistentInputStreamRef.current;
+			if (shouldStopSource) {
+				for (const track of sourceStreamRef.current.getTracks()) {
+					track.stop();
+				}
 			}
 		}
 		if (outputStreamRef.current) {
@@ -110,6 +122,38 @@ export const useAudioRecorder = () => {
 		setStream(null);
 	}, []);
 
+	const getInputStream = useCallback(async () => {
+		const constraints: MediaStreamConstraints = selectedDeviceId
+			? { audio: { deviceId: { exact: selectedDeviceId } } }
+			: { audio: true };
+
+		if (!keepMicAlive) {
+			return await navigator.mediaDevices.getUserMedia(constraints);
+		}
+
+		const persistent = persistentInputStreamRef.current;
+		if (persistent) {
+			const activeTrack = persistent.getAudioTracks()[0];
+			const isLive = activeTrack?.readyState === "live";
+			const currentDeviceId = activeTrack?.getSettings().deviceId ?? "";
+			const sameDevice =
+				!selectedDeviceId ||
+				!currentDeviceId ||
+				currentDeviceId === selectedDeviceId;
+			if (isLive && sameDevice) {
+				return persistent;
+			}
+			for (const track of persistent.getTracks()) {
+				track.stop();
+			}
+			persistentInputStreamRef.current = null;
+		}
+
+		const stream = await navigator.mediaDevices.getUserMedia(constraints);
+		persistentInputStreamRef.current = stream;
+		return stream;
+	}, [keepMicAlive, selectedDeviceId]);
+
 	const startRecording = useCallback(async () => {
 		if (state === "recording") {
 			return false;
@@ -117,10 +161,7 @@ export const useAudioRecorder = () => {
 
 		setError(null);
 		try {
-			const constraints: MediaStreamConstraints = selectedDeviceId
-				? { audio: { deviceId: { exact: selectedDeviceId } } }
-				: { audio: true };
-			const userStream = await navigator.mediaDevices.getUserMedia(constraints);
+			const userStream = await getInputStream();
 			const selectedMimeType = pickMimeType();
 
 			const audioContext = new AudioContext();
@@ -186,7 +227,7 @@ export const useAudioRecorder = () => {
 				cancelAnimationFrame(levelLoopRef.current);
 				levelLoopRef.current = 0;
 				chunksRef.current = [];
-				stopTracks();
+				stopTracks(keepMicAlive);
 				setState("idle");
 				stopResolverRef.current?.({
 					blob,
@@ -207,7 +248,7 @@ export const useAudioRecorder = () => {
 				levelLoopRef.current = 0;
 				setState("error");
 				setError("錄音過程發生錯誤，請再試一次。");
-				stopTracks();
+				stopTracks(keepMicAlive);
 				stopResolverRef.current?.(null);
 				stopResolverRef.current = null;
 				recorderRef.current = null;
@@ -222,7 +263,7 @@ export const useAudioRecorder = () => {
 			setError("無法存取指定麥克風，請確認權限與裝置設定。");
 			return false;
 		}
-	}, [micGain, selectedDeviceId, state, stopTracks]);
+	}, [getInputStream, keepMicAlive, micGain, state, stopTracks]);
 
 	const stopRecording = useCallback(async () => {
 		const recorder = recorderRef.current;
@@ -243,10 +284,41 @@ export const useAudioRecorder = () => {
 	}, [micGain]);
 
 	useEffect(() => {
+		if (!keepMicAlive) {
+			return;
+		}
+		let cancelled = false;
+		const prewarm = async () => {
+			try {
+				const stream = await getInputStream();
+				if (!cancelled || stream !== persistentInputStreamRef.current) {
+					return;
+				}
+				for (const track of stream.getTracks()) {
+					track.stop();
+				}
+				persistentInputStreamRef.current = null;
+			} catch {
+				// Ignore prewarm failures; regular record flow still handles permission errors.
+			}
+		};
+		void prewarm();
+		return () => {
+			cancelled = true;
+		};
+	}, [getInputStream, keepMicAlive]);
+
+	useEffect(() => {
 		return () => {
 			cancelAnimationFrame(levelLoopRef.current);
 			stopTracks();
 			recorderRef.current?.stop();
+			if (persistentInputStreamRef.current) {
+				for (const track of persistentInputStreamRef.current.getTracks()) {
+					track.stop();
+				}
+				persistentInputStreamRef.current = null;
+			}
 		};
 	}, [stopTracks]);
 
