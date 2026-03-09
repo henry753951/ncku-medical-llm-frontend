@@ -4,6 +4,16 @@
 @layer base {
 	* {
 		box-sizing: border-box;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
+		user-select: none;
+	}
+
+	input,
+	textarea {
+		-webkit-user-select: text;
+		user-select: text;
+		-webkit-touch-callout: default;
 	}
 
 	body {
