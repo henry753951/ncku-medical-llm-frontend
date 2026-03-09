@@ -63,6 +63,27 @@ describe("POST /api/transcribe", () => {
 		expect(body.code).toBe("UNSUPPORTED_AUDIO_TYPE");
 	});
 
+	it("accepts audio/webm; codecs=opus after normalization", async () => {
+		const formData = new FormData();
+		formData.append(
+			"audio",
+			new File(["abc"], "recording.webm", { type: "audio/webm" }),
+		);
+		formData.append("mimeType", "audio/webm; codecs=opus");
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+			new Response(JSON.stringify({ text: "測試" }), { status: 200 }),
+		);
+
+		const response = await POST({
+			request: createMultipartRequest(formData),
+		} as never);
+		const body = await response.json();
+
+		expect(response.status).toBe(200);
+		expect(body.code).toBeUndefined();
+		expect(body.text).toBe("測試");
+	});
+
 	it("returns 502 when upstream is unreachable", async () => {
 		const formData = new FormData();
 		formData.append(

@@ -17,6 +17,9 @@ const SAFE_MIME_TYPES = new Set([
 	"audio/ogg;codecs=opus",
 ]);
 
+const normalizeAudioMimeType = (value?: string | null) =>
+	(value ?? "").trim().toLowerCase().replace(/;\s+/g, ";");
+
 const metadataSchema = z.object({
 	mimeType: z.string().trim().min(3).max(64).optional(),
 	language: z.string().trim().min(2).max(12).default("zh"),
@@ -83,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
 	}
 
 	const { language, mimeType } = metadataResult.data;
-	const audioMimeType = mimeType || audio.type;
+	const audioMimeType = normalizeAudioMimeType(mimeType || audio.type);
 	if (audioMimeType && !SAFE_MIME_TYPES.has(audioMimeType)) {
 		return toError(
 			400,
